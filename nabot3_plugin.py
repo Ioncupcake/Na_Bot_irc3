@@ -188,7 +188,7 @@ class Plugin(object):
         """song
             %%song
         """
-        randomLink = open('testdoc.txt', 'r')
+        randomLink = open('songs.txt', 'r')
         lines = randomLink.readlines()
         try:
             return lines[(random.randrange(0, 63))]
