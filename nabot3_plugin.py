@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from irc3.plugins.command import command
 import irc3, string, praw, time, random, requests, asyncio, randimg, redditimage
+ionAway = 0
+awayMsg = ''
 
 
 @irc3.plugin
@@ -13,6 +15,7 @@ class Plugin(object):
         if hasattr(bot, "reloaded_target"):
             print('Finished.')
 
+    # this was in ur code McB idk what the hell it's supposed to do but it's apparently unnecessary
     # @irc3.event(irc3.rfc.CONNECTED)
     # def pre_ident(self):
     #     self.bot.privmsg('nickserv', 'identify Ion_ hunter2')
@@ -26,6 +29,56 @@ class Plugin(object):
             self.bot.privmsg(channel, 'Hiya!')
             # self.bot.privmsg('nickserv', 'identify Ion_ {}'.format(password))
 
+    # Print all PRIVMSGs to the console
+    @irc3.event(irc3.rfc.PRIVMSG)
+    def msg_log(self, mask, event, target, data):
+        try:
+            print('<', mask, '>', target, ': ', data)
+        except UnicodeEncodeError:
+            print('lol im dum i like to use unicode')
+
+    # Check if I'm AFK, tell people I'm AFK if I am (duh).
+    @irc3.event(irc3.rfc.PRIVMSG)
+    def afk(self, mask, event, target, data):
+        if ionAway == 1 and 'Ion_' in data and 'Ion_' not in mask.nick:
+                try:
+                    self.bot.notice(mask.nick, 'Ion_ is away: ' + awayMsg + '.')
+                    print('it worked lol')
+                except UnicodeEncodeError:
+                    self.bot.notice(mask.nick, 'Ion_ is away: ' + awayMsg + '.')
+                    print('lol im dum i like to use unicode')
+
+    # AFK Command
+    @command(permission='admin')
+    def away(self, mask, target, args):
+        """away
+
+            %%away [<message>]...
+        """
+        global ionAway, awayMsg
+        ionAway = 1
+        awayMsg = ''.join(args['<message>'])
+        return "cya"
+
+    # Un-AFK command.
+    @command(permission='admin')
+    def back(self, mask, target, args):
+        """back
+
+            %%back
+        """
+        global ionAway
+        ionAway = 0
+        print(target)
+        return "wb"
+
+
+    #This was me trying to figure out how to do WHOIS.
+    #@irc3.event(irc3.rfc.JOIN)
+    #@asyncio.coroutine
+    #def check_reg(self, mask, channel):
+       #if mask.nick != self.bot.nick:
+           # print(self.whois(':WHOIS Ion_'))
 
     @classmethod
     def reload(cls, old):
@@ -39,7 +92,7 @@ class Plugin(object):
             password = f.read().strip()
             print(password)
         self.bot.privmsg('nickserv', 'identify Ion_ {}'.format(password))
-        
+
 
     @command(permission='view')
     def echo(self, mask, target, args):
@@ -49,13 +102,30 @@ class Plugin(object):
         """
         yield ' '.join(args['<message>'])
 
+# Dumb Commands -------------------------------------------------------------------------------------------------------
     @command(permission='view')
     def ballkban(self, mask, target, args):
         """ballkban
 
-            %%ballkban <message>...
+            %%ballkban [<message>]...
         """
-        return "Ballkenende's ban from #tagpro ends in ∞ hours."
+        return "Ballkenende's ban from #tagpro ends in NaN hours."
+
+    # #tpnazis thing I tried to do
+    #@command(permission='view')
+    #def nazis(self, mask, target, args):
+        #"""nazis
+
+            #%%nazis [<message>]...
+        #"""
+        #self.bot.privmsg('Ion_', 'bruh u got a mod call')
+        #print(len(args['<message>']))
+        #if len(args['<message>']) < 1:
+            #return mask.nick + ' - Please recall *nazis with a reason to notify a nazi.'
+        #else:
+            #how 2 ban ppl idk lol
+
+
 
     @command(permission='view')
     def scarycat(self, mask, target, args):
@@ -65,6 +135,15 @@ class Plugin(object):
         """
         return 'http://i.imgur.com/yJHPheo.gif'
 
+    # i should be studying but I'm doing this dumb shit
+    @command(permission='view')
+    def dog(self, mask, target, args):
+        """dog
+
+            %%dog [<message>]...
+        """
+        return 'http://i.imgur.com/YbkBxYb.gif'
+
     @command(permission='view')
     def usuk(self, mask, target, args):
         """usuk
@@ -73,7 +152,16 @@ class Plugin(object):
         """
         return 'no u'
 
-    # lol yay stealing
+    @command(permission='view')
+    def randint(self, mask, target, args):
+        """randint
+
+            %%randint
+        """
+        return str(random.randrange(0, 100))
+# End Dumb Commands ---------------------------------------------------------------------------------------------------
+
+    # Grab random imgur image. lol yay stealing.
     @command(permission='view')
     @asyncio.coroutine
     def random(self, mask, target, args):
@@ -85,7 +173,7 @@ class Plugin(object):
         return 'Random imgur link, possibly NSFW: {}'.format(randomurl)
         # self.bot.privmsg(target, '{}: potentially NSFW: {}'.format(mask.nick, randomurl))
 
-    # stealing is gr8
+    # Grab random NSFW subreddit. stealing is gr8.
     @command(permission='view')
     def randnsfw(self, mask, target, args):
         """randnsfw
@@ -94,16 +182,20 @@ class Plugin(object):
         link = redditimage.randnsfw()
         self.bot.privmsg(target, "Random NSFW Subreddit: {}".format(link))
 
-    #this shit is broke as fuck yo idk how to do pythun
-    #@command(permission='view')
-    #def meirl(self, mask, target, args):
-        #"""meirl
-           #%%meirl <message>
-        #"""
-        #image =
-        #self.bot.privmsg(target, "me irl {}".format(image))
+    # Grab random song from list. this shit works dope as hell aw yiss.
+    @command(permission='view')
+    def song(self, mask, target, args):
+        """song
+            %%song
+        """
+        randomLink = open('testdoc.txt', 'r')
+        lines = randomLink.readlines()
+        try:
+            return lines[(random.randrange(0, 63))]
+        except IndexError:
+            print('That line does not exist!')
 
-    # i fuckin love stealing
+    # Grab random image from a given subreddit. i fuckin love stealing.
     @command(permission='view')
     def reddit(self, mask, target, args):
         """reddit
@@ -116,21 +208,13 @@ class Plugin(object):
             self.bot.privmsg(target, "Link to reddit: {}".format(url))
 
 
-    @command(permission='view')
-    def randint(self, mask, target, args):
-        """randint
-
-            %%randint
-        """
-        return str(random.randrange(0, 100))
-
     @command(permission='admin')
     @asyncio.coroutine
     def talk(self, mask, target, args):
         """talk
             %%talk <channel> <message>...
         """
-        print (args)
+        print(args)
         self.bot.privmsg(args['<channel>'], ' '.join(args['<message>']))
 
     @command(permission='admin')
